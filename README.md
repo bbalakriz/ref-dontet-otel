@@ -3,24 +3,24 @@
 Terminal 1:
 ===========
 // Run the complete OpenTelemtry setup
-
+```
 cd application/Configs 
 docker-compose up
-
+```
 
 Terminal 2:
 ===========
 // Build and run the app
-
+```
 cd application/SampleOpenTelemetry
 dotnet clean && dotnet build && dotnet run
-
+```
 Terminal 3:
 ===========
 // Trigger APIs in an infinite loop
-
+```
 while true; do curl localhost:5258; done
-
+```
 
 Access grafana console to see logs in Loki:
 ===========================================
