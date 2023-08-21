@@ -2,7 +2,7 @@
 
 Terminal 1:
 ===========
-// Run the complete OpenTelemtry setup
+// Run the complete OpenTelemetry setup
 ```
 cd application/Configs 
 docker-compose up
