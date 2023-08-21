@@ -1,60 +1,68 @@
-using System.Diagnostics.Metrics;
-using System.Diagnostics;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
+using Microsoft.AspNetCore.HttpLogging;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using System.Diagnostics.Metrics;
+using System.Diagnostics;
 
 // This is required if the collector doesn't expose an https endpoint
-AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+// AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddOpenTelemetryMetrics(builder =>
-{
-    builder.AddHttpClientInstrumentation();
-    builder.AddAspNetCoreInstrumentation();
-    builder.AddMeter("MyApplicationMetrics");
-    builder.AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"));
-});
 
-builder.Services.AddOpenTelemetryTracing(builder =>
-{
-    builder.AddAspNetCoreInstrumentation();
-    builder.AddHttpClientInstrumentation();
-    builder.AddSource("MyApplicationActivitySource");
-    builder.AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"));
-});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(options =>
+    {
+        options.AddAspNetCoreInstrumentation();
+        options.AddHttpClientInstrumentation();
+        options.AddOtlpExporter(option => option.Endpoint = new Uri("http://localhost:4317"));
+    });
+    
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(options => 
+    {
+        options.AddHttpClientInstrumentation();
+        options.AddAspNetCoreInstrumentation();
+        options.AddProcessInstrumentation();
+        options.AddRuntimeInstrumentation();
+        options.AddOtlpExporter(option => option.Endpoint = new Uri("http://localhost:4317"));
+    });
 
-builder.Logging.AddOpenTelemetry(builder =>
+var appResourceBuilder = ResourceBuilder.CreateDefault()
+    .AddService("ref-dontet-otel", "1.0");
+
+using var loggerFactory = LoggerFactory.Create(builder =>
 {
-    builder.IncludeFormattedMessage = true;
-    builder.IncludeScopes = true;
-    builder.ParseStateValues = true;
-    builder.AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"));
+    builder.AddOpenTelemetry(options =>
+    {
+        options.SetResourceBuilder(appResourceBuilder);
+        options.AddOtlpExporter(option =>
+        {
+            option.Endpoint = new Uri("http://localhost:4317");
+        });
+    });
 });
 
 var app = builder.Build();
-
-var activitySource = new ActivitySource("MyApplicationActivitySource");
-var meter = new Meter("MyApplicationMetrics");
-var requestCounter = meter.CreateCounter<int>("compute_requests");
+var logger = loggerFactory.CreateLogger<Program>();
 var httpClient = new HttpClient();
 
-app.MapGet("/", async (ILogger<Program> logger) =>
+logger.LogInformation("********************************************************");
+logger.LogInformation("Starting the app ***************************************");
+logger.LogInformation("********************************************************");
+
+
+app.MapGet("/", async() =>
 {
-    requestCounter.Add(1);
+    var response1 = httpClient.GetAsync("https://example.com");
+    var response2 = httpClient.GetAsync("https://google.com");
 
-    using (var activity = activitySource.StartActivity("Get data"))
-    {
-        activity?.AddTag("sample", "value");
-
-        var str1 = await httpClient.GetStringAsync("https://example.com");
-        var str2 = await httpClient.GetStringAsync("https://www.meziantou.net");
-        await httpClient.GetStringAsync("https://localhost:7259/compute");
-
-        logger.LogInformation("Response1 length: {Length}", str1.Length);
-        logger.LogInformation("Response2 length: {Length}", str2.Length);
-    }
+    logger.LogInformation("********************API INVOKED************************************");
+    logger.LogInformation("API1 Response: {content}", await response1.Result.Content.ReadAsStringAsync());
+    logger.LogInformation("API2 Response: {content}", await response2.Result.Content.ReadAsStringAsync());
+    logger.LogInformation("********************API INVOKED************************************");
 
     return Results.Ok();
 });
