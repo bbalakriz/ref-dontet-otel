@@ -1,4 +1,5 @@
 # ref-dontet-otel
+# Auto instrumentation of a .NET binary on linux machine
 
 Terminal 1:
 ===========
@@ -13,7 +14,11 @@ Terminal 2:
 // Build and run the app
 ```
 cd application/SampleOpenTelemetry
-dotnet clean && dotnet build && dotnet run
+dotnet clean && dotnet publish -r linux-x64 --self-contained false
+
+cd bin/Debug/net7.0/linux-x64/publish/
+
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED=true OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp OTEL_LOGS_EXPORTER=otlp OTEL_SERVICE_NAME=myapp OTEL_RESOURCE_ATTRIBUTES=deployment.environment=staging,service.version=1.0.0 ./SampleOpenTelemetry 
 ```
 Terminal 3:
 ===========
@@ -37,5 +42,3 @@ Access Jaeger UI to see the traces:
 ===================================
 http://localhost:14250/search?end=1692606153523000&limit=20&lookback=5m
 ![image](https://github.com/bbalakriz/ref-dontet-otel/assets/37283315/a1fd3612-004e-494a-8ebf-07fd94a99870)
-
-
