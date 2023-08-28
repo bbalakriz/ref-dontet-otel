@@ -1,6 +1,23 @@
 # ref-dontet-otel
 # Auto instrumentation of a .NET binary on linux machine
 
+Initial setup on a host that would run the .NET executable:
+===========================================================
+Follow the steps outlined here: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation#shell-scripts
+```
+# Download the bash script
+curl -sSfL https://raw.githubusercontent.com/open-telemetry/opentelemetry-dotnet-instrumentation/v1.0.0-rc.2/otel-dotnet-auto-install.sh -O
+
+# Install core files
+sh ./otel-dotnet-auto-install.sh
+
+# Enable execution for the instrumentation script
+chmod +x $HOME/.otel-dotnet-auto/instrument.sh
+
+# Setup the instrumentation for the current shell session
+. $HOME/.otel-dotnet-auto/instrument.sh
+```
+
 Terminal 1:
 ===========
 // Run the complete OpenTelemetry setup
@@ -18,7 +35,11 @@ dotnet clean && dotnet publish -r linux-x64 --self-contained false
 
 cd bin/Debug/net7.0/linux-x64/publish/
 
+# For using OTLP gRPC to export telemetry data to collector
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED=true OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp OTEL_LOGS_EXPORTER=otlp OTEL_SERVICE_NAME=myapp OTEL_RESOURCE_ATTRIBUTES=deployment.environment=staging,service.version=1.0.0 ./SampleOpenTelemetry 
+
+# For using OTLP HTTP to export telemetry data to collector
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED=true OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp OTEL_LOGS_EXPORTER=otlp OTEL_SERVICE_NAME=myapp OTEL_RESOURCE_ATTRIBUTES=deployment.environment=staging,service.version=1.0.0 OTEL_LOG_LEVEL=debug ./SampleOpenTelemetry
 ```
 Terminal 3:
 ===========
