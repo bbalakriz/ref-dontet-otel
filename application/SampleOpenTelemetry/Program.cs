@@ -17,7 +17,7 @@ builder.Services.AddOpenTelemetry()
     {
         options.AddAspNetCoreInstrumentation();
         options.AddHttpClientInstrumentation();
-        options.AddOtlpExporter(option => option.Endpoint = new Uri("http://localhost:4317"));
+        options.AddOtlpExporter(option => option.Endpoint = new Uri("http://otel-collector.otel.svc.cluster.local:4317"));
     });
     
 builder.Services.AddOpenTelemetry()
@@ -27,7 +27,7 @@ builder.Services.AddOpenTelemetry()
         options.AddAspNetCoreInstrumentation();
         options.AddProcessInstrumentation();
         options.AddRuntimeInstrumentation();
-        options.AddOtlpExporter(option => option.Endpoint = new Uri("http://localhost:4317"));
+        options.AddOtlpExporter(option => option.Endpoint = new Uri("http://otel-collector.otel.svc.cluster.local:4317"));
     });
 
 var appResourceBuilder = ResourceBuilder.CreateDefault()
@@ -40,7 +40,7 @@ using var loggerFactory = LoggerFactory.Create(builder =>
         options.SetResourceBuilder(appResourceBuilder);
         options.AddOtlpExporter(option =>
         {
-            option.Endpoint = new Uri("http://localhost:4317");
+            option.Endpoint = new Uri("http://otel-collector.otel.svc.cluster.local:4317");
         });
     });
 });
