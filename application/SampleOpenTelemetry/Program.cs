@@ -64,7 +64,7 @@ app.MapGet("/", async() =>
     logger.LogInformation("API2 Response: {content}", await response2.Result.Content.ReadAsStringAsync());
     logger.LogInformation("********************API INVOKED************************************");
 
-    return Results.Ok();
+    return Results.Ok("Success");
 });
 
 app.Run();
